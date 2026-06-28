@@ -49,4 +49,21 @@ public class AuthService {
         // 4. Guardar en la base de datos a través del repositorio
         return usuarioRepository.save(nuevoUsuario);
     }
+
+    /**
+     * Valida las credenciales de un usuario
+     */
+    public Usuario login(String nombre, String password) {
+        // 1. Buscar al usuario por nombre
+        Usuario usuario = usuarioRepository.findByNombre(nombre)
+                .orElseThrow(() -> new RuntimeException("Credenciales incorrectas."));
+
+        // 2. Comprobar si la contraseña coincide con el hash guardado
+        if (!passwordEncoder.matches(password, usuario.getPassword())) {
+            throw new RuntimeException("Credenciales incorrectas.");
+        }
+
+        // 3. Si todo es correcto, devolvemos el usuario
+        return usuario;
+    }
 }
