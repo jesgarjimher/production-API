@@ -5,6 +5,8 @@ import com.production.entities.Usuario;
 import com.production.repositories.RolRepository;
 import com.production.repositories.UsuarioRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
@@ -13,11 +15,13 @@ public class AuthService {
 
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     // Inyección de dependencias por constructor
-    public AuthService(UsuarioRepository usuarioRepository, RolRepository rolRepository) {
+    public AuthService(UsuarioRepository usuarioRepository, RolRepository rolRepository, BCryptPasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -37,9 +41,9 @@ public class AuthService {
         Usuario nuevoUsuario = new Usuario();
         nuevoUsuario.setNombre(nombre);
 
-        // NOTA: Guardamos la contraseña en texto plano de momento para probar el flujo.
-        // En el siguiente paso implementaremos el cifrado BCrypt por seguridad.
-        nuevoUsuario.setPassword(password);
+        String passwordEncriptada = passwordEncoder.encode(password);
+        nuevoUsuario.setPassword(passwordEncriptada);
+
         nuevoUsuario.setRol(rolPorDefecto);
 
         // 4. Guardar en la base de datos a través del repositorio
