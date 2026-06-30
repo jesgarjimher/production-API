@@ -24,8 +24,28 @@ public class AuthController {
 
     // Endpoint para registrar usuarios: POST http://localhost:8081/auth/register
     @PostMapping("/register")
-    public ResponseEntity<?> registrar(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> registrar(@RequestHeader(value = "Authorization", required = false) String bearerToken,
+                                       @RequestBody Map<String, String> body) {
         try {
+
+            // 1. Validar si el cliente ha enviado el token en la cabecera
+            if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("Acceso denegado: Se requiere un token válido.");
+            }
+
+            // 2. Extraer el token puro (quitando la palabra "Bearer ")
+            String token = bearerToken.substring(7);
+
+            // 3. Extraer el rol del token usando nuestro JwtService
+            String rolDelSolicitante = jwtService.extraerRol(token);
+
+            // 4. 🔥 RESTRICCIÓN DE SEGURIDAD: Solo el 'responsable_calidad' puede registrar
+            if (!"responsable_calidad".equals(rolDelSolicitante)) {
+                return ResponseEntity.status(403)
+                        .body("Acceso prohibido: Solo los usuarios con rol 'responsable_calidad' pueden registrar personal.");
+            }
+
+            // 5. Si pasa el filtro, procedemos con el registro normal
             String nombre = body.get("nombre");
             String password = body.get("password");
 
@@ -35,8 +55,8 @@ public class AuthController {
 
             Usuario usuarioCreado = authService.registrarUsuario(nombre, password);
             return ResponseEntity.ok(usuarioCreado);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Token inválido o vencido: " + e.getMessage());
         }
     }
 

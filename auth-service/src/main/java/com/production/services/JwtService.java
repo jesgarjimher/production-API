@@ -30,4 +30,15 @@ public class JwtService {
                 .withExpiresAt(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .sign(algoritmo);
     }
+
+    public String extraerRol(String token) {
+        Algorithm algoritmo = Algorithm.HMAC256(SECRET_KEY);
+
+        // El método verify() lanzará una excepción automáticamente si el token fue manipulado o caducó
+        return JWT.require(algoritmo)
+                .build()
+                .verify(token)
+                .getClaim("rol")
+                .asString();
+    }
 }
