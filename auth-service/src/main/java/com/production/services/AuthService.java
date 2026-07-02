@@ -66,4 +66,19 @@ public class AuthService {
         // 3. Si todo es correcto, devolvemos el usuario
         return usuario;
     }
+
+    /**
+     * Borra un usuario de la base de datos por su nombre
+     */
+    public void eliminarUsuario(String nombre) {
+        Usuario usuario = usuarioRepository.findByNombre(nombre)
+                .orElseThrow(() -> new RuntimeException("Error: El usuario '" + nombre + "' no existe."));
+
+        // No queremos que el jefe de calidad se borre a sí mismo por accidente
+        if ("jefe_calidad".equals(nombre)) {
+            throw new RuntimeException("Operación no permitida: No se puede eliminar al usuario administrador del sistema.");
+        }
+
+        usuarioRepository.delete(usuario);
+    }
 }

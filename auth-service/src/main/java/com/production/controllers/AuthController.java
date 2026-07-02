@@ -88,4 +88,41 @@ public class AuthController {
             return ResponseEntity.status(401).body(e.getMessage());
         }
     }
+
+    // Endpoint para Logout: POST http://localhost:8081/auth/logout
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        // Aquí confirmamos al cliente que la sesión se da por cerrada en el servidor.
+        return ResponseEntity.ok(Map.of("mensaje", "Cierre de sesión exitoso. El cliente debe descartar el token."));
+    }
+
+    // Endpoint protegido: DELETE http://localhost:8081/auth/delete/{nombre}
+    @DeleteMapping("/delete/{nombre}")
+    public ResponseEntity<?> eliminarUsuario(
+            @RequestHeader(value = "Authorization", required = false) String bearerToken,
+            @PathVariable String nombre) {
+
+        try {
+            // 1. Validar Token
+            if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("Acceso denegado: Se requiere un token válido.");
+            }
+
+            String token = bearerToken.substring(7);
+
+            // 2. Validar Rol
+            String rolDelSolicitante = jwtService.extraerRol(token);
+            if (!"responsable_calidad".equals(rolDelSolicitante)) {
+                return ResponseEntity.status(403)
+                        .body("Acceso prohibido: Solo los usuarios con rol 'responsable_calidad' pueden eliminar usuarios.");
+            }
+
+            // 3. Ejecutar borrado
+            authService.eliminarUsuario(nombre);
+            return ResponseEntity.ok(Map.of("mensaje", "Usuario '" + nombre + "' eliminado correctamente de la base de datos."));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(e.getMessage());
+        }
+    }
 }
