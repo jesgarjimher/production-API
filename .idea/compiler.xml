@@ -8,6 +8,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="production-service" />
         <module name="auth-service" />
+        <module name="fabricacion-service" />
       </profile>
     </annotationProcessing>
   </component>
