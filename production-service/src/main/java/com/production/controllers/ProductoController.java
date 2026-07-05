@@ -33,4 +33,18 @@ public class ProductoController {
             return ResponseEntity.badRequest().body("Error al crear el producto: " + e.getMessage());
         }
     }
+
+    // PUT http://localhost:8082/productos/descontar?codigo=PROD-001&cantidad=50
+    @PutMapping("/descontar")
+    public ResponseEntity<?> descontarStock(
+            @RequestParam("codigo") String codigo,
+            @RequestParam("cantidad") int cantidad) {
+
+        // NOTA: Aquí deberías buscar tu producto en la base de datos por su código,
+        // restarle la cantidad al stock actual y hacer el repository.save().
+        // De momento, simularemos que todo va bien devolviendo un mensaje de éxito:
+
+        System.out.println("Copiado de stock interno: Descontando " + cantidad + " unidades de " + codigo);
+        return ResponseEntity.ok("Stock actualizado con exito en el catalogo.");
+    }
 }
