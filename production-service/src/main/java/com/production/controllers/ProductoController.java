@@ -4,7 +4,7 @@ import com.production.entities.Producto;
 import com.production.repositories.ProductoRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.Optional;
 import java.util.List;
 
 @RestController
@@ -35,16 +35,28 @@ public class ProductoController {
     }
 
     // PUT http://localhost:8082/productos/descontar?codigo=PROD-001&cantidad=50
-    @PutMapping("/descontar")
-    public ResponseEntity<?> descontarStock(
+    @PutMapping("/descontar") // Mantenemos la ruta para que fabricacion-service no falle
+    public ResponseEntity<?> incrementarStock(
             @RequestParam("codigo") String codigo,
             @RequestParam("cantidad") int cantidad) {
 
-        // NOTA: Aquí deberías buscar tu producto en la base de datos por su código,
-        // restarle la cantidad al stock actual y hacer el repository.save().
-        // De momento, simularemos que todo va bien devolviendo un mensaje de éxito:
+        // 1. Buscar el producto en MySQL
+        Optional<Producto> opcional = productoRepository.findByCodigo(codigo);
+        if (opcional.isEmpty()) {
+            return ResponseEntity.status(404)
+                    .body("Error: El producto '" + codigo + "' no existe en el catálogo.");
+        }
+        Producto producto = opcional.get();
 
-        System.out.println("Copiado de stock interno: Descontando " + cantidad + " unidades de " + codigo);
-        return ResponseEntity.ok("Stock actualizado con exito en el catalogo.");
+        //SUMA AL STOCK
+        int nuevoStock = producto.getStock() + cantidad;
+        producto.setStock(nuevoStock);
+
+        // 3. Guardar en DB
+        productoRepository.save(producto);
+
+        System.out.println("¡Orden completada! Se han sumado " + cantidad + " unidades a [" + codigo + "]. Nuevo stock total: " + nuevoStock);
+
+        return ResponseEntity.ok("Stock incrementado con éxito. Unidades totales de " + producto.getNombre() + ": " + nuevoStock);
     }
 }
