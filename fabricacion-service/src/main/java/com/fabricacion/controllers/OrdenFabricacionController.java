@@ -116,8 +116,17 @@ public class OrdenFabricacionController {
 
     // PUT http://localhost:8083/ordenes/1/cancelar
     @PutMapping("/{id}/cancelar")
-    public ResponseEntity<?> cancelarOrden(@PathVariable("id") Long id) {
+    public ResponseEntity<?> cancelarOrden(@PathVariable("id") Long id, HttpServletRequest request) {
 
+        //CONTROL DE SEGURIDAD: Recuperamos el rol inyectado por el JwtInterceptor
+        String rol = (String) request.getAttribute("userRol");
+
+        if (!"responsable_calidad".equals(rol)) {
+            return ResponseEntity.status(403)
+                    .body("Acceso prohibido: Solo el 'responsable_calidad' puede cancelar órdenes.");
+        }
+
+        // --- Continuamos con lógica de negocio ---
         Optional<OrdenFabricacion> opcional = repository.findById(id);
         if (opcional.isEmpty()) {
             return ResponseEntity.status(404)
@@ -126,7 +135,7 @@ public class OrdenFabricacionController {
 
         OrdenFabricacion orden = opcional.get();
 
-        //COMPARACIÓN SEGURA CON ENUMS
+        // COMPARACIÓN SEGURA CON ENUMS
         if (orden.getEstado() == EstadoOrden.TERMINADA) {
             return ResponseEntity.badRequest()
                     .body("Error: No se puede cancelar una orden que ya está TERMINADA.");
