@@ -24,9 +24,27 @@ public class OrdenFabricacionController {
     }
 
     // Listar todas las órdenes: GET http://localhost:8083/ordenes
+    // Listar órdenes:
+    // Todo: GET http://localhost:8083/ordenes
+    // Filtrado: GET http://localhost:8083/ordenes?estado=PENDIENTE
     @GetMapping
-    public List<OrdenFabricacion> listarOrdenes() {
-        return repository.findAll();
+    public ResponseEntity<?> listarOrdenes(@RequestParam(value = "estado", required = false) String estado) {
+
+        // Si el usuario NO pasa el parámetro '?estado=', devolvemos la lista completa
+        if (estado == null || estado.isBlank()) {
+            return ResponseEntity.ok(repository.findAll());
+        }
+
+        // Si SÍ pasa el parámetro, intentamos mapearlo al Enum para buscar
+        try {
+            EstadoOrden estadoEnum = EstadoOrden.valueOf(estado.toUpperCase());
+            List<OrdenFabricacion> filtradas = repository.findByEstado(estadoEnum);
+            return ResponseEntity.ok(filtradas);
+        } catch (IllegalArgumentException e) {
+            // Si mandan un estado inventado que no existe en el Enum (ej: ?estado=ROTO)
+            return ResponseEntity.badRequest()
+                    .body("Estado de filtro inválido. Use: PENDIENTE, EN_PROCESO, TERMINADA o CANCELADA");
+        }
     }
 
     // Crear una nueva orden (Por defecto PENDIENTE): POST http://localhost:8083/ordenes
@@ -72,7 +90,7 @@ public class OrdenFabricacionController {
         repository.save(orden);
 
         //SI LA ORDEN SE TERMINA -> HACEMOS COMUNICACIÓN ENTRE MICROSERVICIOS
-        // 🔥 Corregido: Comparamos directamente usando Enums
+        //Comparamos directamente usando Enums
         if (orden.getEstado() == EstadoOrden.TERMINADA) {
             String tokenOriginal = request.getHeader("Authorization");
 
