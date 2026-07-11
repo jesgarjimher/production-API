@@ -17,8 +17,9 @@ public class OrdenFabricacion {
     @Column(nullable = false)
     private int cantidad;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String estado; // PENDIENTE, EN_PROCESO, TERMINADA
+    private EstadoOrden estado; // PENDIENTE, EN_PROCESO, TERMINADA, CANCELADA
 
     private LocalDateTime fechaCreacion;
 
@@ -30,7 +31,7 @@ public class OrdenFabricacion {
     // --- Constructores ---
     public OrdenFabricacion() {}
 
-    public OrdenFabricacion(String codigoProducto, int cantidad, String estado) {
+    public OrdenFabricacion(String codigoProducto, int cantidad, EstadoOrden estado) {
         this.codigoProducto = codigoProducto;
         this.cantidad = cantidad;
         this.estado = estado;
@@ -46,8 +47,8 @@ public class OrdenFabricacion {
     public int getCantidad() { return cantidad; }
     public void setCantidad(int cantidad) { this.cantidad = cantidad; }
 
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
+    public EstadoOrden getEstado() { return estado; }
+    public void setEstado(EstadoOrden estado) { this.estado = estado; }
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
