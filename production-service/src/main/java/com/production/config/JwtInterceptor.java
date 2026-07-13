@@ -20,7 +20,11 @@ public class JwtInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         // 1. Si la petición es un GET (para ver productos), permitimos el paso a cualquier operario logueado
         // Pero primero comprobamos si viene el token de autenticación obligatorio para entrar a la intranet.
-
+        // Si la petición es un preflight de CORS (OPTIONS), la dejamos pasar sin validar token
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            return true;
+        }
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
