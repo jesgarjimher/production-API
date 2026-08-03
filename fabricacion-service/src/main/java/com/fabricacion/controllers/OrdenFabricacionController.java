@@ -152,4 +152,74 @@ public class OrdenFabricacionController {
 
         return ResponseEntity.ok("La orden ID " + id + " ha sido CANCELADA correctamente.");
     }
+
+    // PUT http://localhost:8083/ordenes/{id}/avanzar-stock?cantidadProducida=20
+    @PutMapping("/{id}/avanzar-stock")
+    public ResponseEntity<?> avanzarStockParcial(
+            @PathVariable("id") Long id,
+            @RequestParam("cantidadProducida") int cantidadProducida,
+            HttpServletRequest request) {
+
+        if (cantidadProducida <= 0) {
+            return ResponseEntity.badRequest().body("La cantidad producida debe ser mayor a 0.");
+        }
+
+        Optional<OrdenFabricacion> opcional = repository.findById(id);
+        if (opcional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        OrdenFabricacion orden = opcional.get();
+
+        if (orden.getEstado() != EstadoOrden.EN_PROCESO) {
+            return ResponseEntity.badRequest().body("Solo se puede sumar stock parcial a órdenes que estén EN_PROCESO.");
+        }
+
+        // 1. Calculamos cuánto llevaríamos en total con este nuevo lote
+        int actualmenteProducido = orden.getCantidadProducida();
+        int nuevoAcumulado = actualmenteProducido + cantidadProducida;
+        int pendiente = orden.getCantidad() - actualmenteProducido;
+
+        // 2. VALIDACIÓN: No permitir pasarse del total restante
+        if (nuevoAcumulado > orden.getCantidad()) {
+            return ResponseEntity.badRequest()
+                    .body("Error: Intentas añadir " + cantidadProducida + " unidades, pero solo quedan "
+                            + pendiente + " unidades pendientes para completar esta orden (" + actualmenteProducido + "/" + orden.getCantidad() + ").");
+        }
+
+        // 3. COMUNICACIÓN CON PRODUCTION-SERVICE (Sumar al stock real en el catálogo)
+        String tokenOriginal = request.getHeader("Authorization");
+        try {
+            String respuestaCatalog = webClient.put()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/productos/descontar")
+                            .queryParam("codigo", orden.getCodigoProducto())
+                            .queryParam("cantidad", cantidadProducida)
+                            .build())
+                    .header("Authorization", tokenOriginal)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            System.out.println("Respuesta del catálogo (Stock parcial): " + respuestaCatalog);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error al comunicar el stock al catálogo: " + e.getMessage());
+        }
+
+        // 4. GUARDAR EL NUEVO ACUMULADO
+        orden.setCantidadProducida(nuevoAcumulado);
+
+        // 5. SI SE ALCANZA EL TOTAL -> CAMBIAR A TERMINADA
+        if (nuevoAcumulado >= orden.getCantidad()) {
+            orden.setEstado(EstadoOrden.TERMINADA);
+            repository.save(orden);
+            return ResponseEntity.ok("¡Lote de " + cantidadProducida + " unidades añadido! La orden ha alcanzado el 100% ("
+                    + nuevoAcumulado + "/" + orden.getCantidad() + ") y se ha marcado como TERMINADA.");
+        }
+
+        // Si aún quedan unidades pendientes:
+        repository.save(orden);
+        return ResponseEntity.ok("Lote de " + cantidadProducida + " unidades registrado. Avance actual: "
+                + nuevoAcumulado + " de " + orden.getCantidad() + " unidades.");
+    }
 }

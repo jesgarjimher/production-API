@@ -21,6 +21,9 @@ public class OrdenFabricacion {
     @Column(nullable = false)
     private EstadoOrden estado; // PENDIENTE, EN_PROCESO, TERMINADA, CANCELADA
 
+    @Column(nullable = false)
+    private Integer cantidadProducida = 0;
+
     private LocalDateTime fechaCreacion;
 
     @PrePersist
@@ -52,4 +55,12 @@ public class OrdenFabricacion {
 
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+
+    public Integer getCantidadProducida() {
+        return cantidadProducida == null ? 0 : cantidadProducida; //evita que devuelvanull si hay registros viejos en la DB
+    }
+
+    public void setCantidadProducida(Integer cantidadProducida) {
+        this.cantidadProducida = cantidadProducida;
+    }
 }
