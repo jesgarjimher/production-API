@@ -1,6 +1,7 @@
 package com.production.controllers;
 
 import com.production.entities.Usuario;
+import com.production.repositories.UsuarioRepository;
 import com.production.services.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -125,5 +126,12 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(400).body(e.getMessage());
         }
+    }
+
+    // GET http://localhost:8081/auth/usuarios
+    @GetMapping("/usuarios")
+    public ResponseEntity<?> listarUsuarios() {
+        // Retorna la lista de todos los usuarios registrados en MySQL
+        return ResponseEntity.ok(authService.listarUsuarios());
     }
 }
